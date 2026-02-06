@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block body %}
+<div class="main-container">
+    <div class="top-panel">
+        <div class="user-info">
+            <div>Zalogowano jako:</br>Jacus</div>
+            <form action="/logout" method="GET" style="display: contents;">
+                <button>Wyloguj</button>
+            </form>
+        </div>
+    </div>
+    <div class="content">
+        <form action="/newnote" method="POST" class="send-form">
+            <div id="save-panel">
+                <input type="text" placeholder="Tytuł notatki" id="title-input" name="title-input">
+                <button type="submit">Zapisz</button>
+            </div>
+                <textarea id="note" name="note" placeholder="Wpisz tutaj notatkę markdown"></textarea>
+        </form>
+    </div>
+</div>
+{% endblock %}

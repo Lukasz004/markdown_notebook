@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block body %}
+<div class="main-container">
+            <div class="login-container">
+                <h1>Zaloguj się</h1>
+                {% with messages = get_flashed_messages(with_categories=true)%}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="message message-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                <form action="/" method="POST" class="login-form">
+                    <input type="text" class="login-input" name="login" id="login" placeholder="login">
+                    <input type="password" class="login-input" name="password" id="password" placeholder="hasło">
+                    <input type="text" class="login-input" name="2fa" id="2fa" placeholder="kod 2fa">
+                    <button type="submit">Zaloguj</button>
+                </form>
+            </div>
+            <div class="register-container">
+                <div>Nie masz konta?</div>
+                <a href="/register" style="text-decoration: underline;color: black;">Zarejestruj się</a>
+            </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,156 @@
+html{
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+h1{
+    margin: 0px;
+    font-size: 44px;
+}
+
+button {
+    font-size: 16px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
+textarea{
+    resize: none;
+    width: 100%;
+    height: 95%;
+    border: none;
+    background: none;
+}
+
+.main-container{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-container{
+    width: 400px; 
+    height: 400px; 
+    display: flex;
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center;
+    border: 1px solid black;
+    margin-bottom: 20px;
+    gap: 30px;
+}
+
+.register-container{
+    width: 400px;
+    height: 50px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border: 1px solid black;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+}
+
+.login-input{
+    height: 35px;
+    width: 90%;
+    font-size: 16px;
+}
+
+.message{
+    font-size: 14px;
+    align-self: flex-start;
+    gap: 0px;
+    margin-left: 20px;
+    margin-bottom: -15px;
+    margin-top: -20px
+}
+
+.message-error{
+    color: red;
+}
+
+.message-success{
+    color: green; 
+}
+
+.top-panel{
+    width: calc(100% - 20px);
+    height: 5%;
+    border: 1px solid black;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.user-info{
+    display: flex;
+    gap: 10px;
+    flex-direction: row;
+    margin-left:auto;
+}
+
+.content{
+    display: flex;
+    flex-direction: row;
+    height: 95%;
+    width: 100%;
+    border-bottom: 1px solid black;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+}
+
+.left-panel{
+    width: 20%;
+    height: calc(100%-10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-right: 1px solid black;
+    gap: 10px
+}
+
+.right-panel{
+    width: 80%;
+    height: 100%;
+    border-left: 1px solid black;
+}
+
+#save-panel{
+    width: calc(100% - 20px);
+    height: 5%;
+    border-bottom: 1px solid black;
+    display: flex;
+    justify-content: space-between;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+#title-input{
+    font-size: 16px;
+    border: none;
+    width: 100%;
+}
+
+.send-form{
+    width: 100%;
+    height: 100%;
+}
+
+#delete-panel{
+    border-bottom: 1px solid black;
+    height: 5%;
+    text-align: right;
+    padding-right: 10px;
+}
