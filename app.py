@@ -117,16 +117,74 @@ def main():
     if request.method == "POST":
         pass
     else:
-        return render_template("main.html")
+        notes = getnotes()
+        return render_template("main.html", notes=notes)
+    
+def getnotes():
+    try:
+        db = sqlite3.connect(DATABASE)
+        sql = db.cursor()
+        sql.execute('SELECT id, note, title FROM notes WHERE owner=(?)', (current_user.login,))
+        rows = sql.fetchall()
+        return rows
+    except:
+        db.rollback()
+        return None
+    finally:
+        db.close()
     
 @app.route('/newnote', methods=["GET", "POST"])
 @login_required
 def newnote():
     if request.method == "POST":
-        return redirect('/main')
+        note = request.form['note']
+        title = request.form['title-input']
+        error = False
+
+        if not note:
+            flash("Nie można dodać pustej notatki!", 'error')
+            error = True
+        elif not title:
+            flash("Notatka musi mieć tytuł!", 'error')
+            error = True
+
+        if not error:
+            try:
+                db = sqlite3.connect(DATABASE)
+                sql = db.cursor()
+                sql.execute('INSERT INTO notes (id, note, title, owner) VALUES (?,?,?,?)', (str(uuid4()), note, title, current_user.login))
+                db.commit()
+                return redirect(url_for('main'))
+            except Exception as e:
+                print(e)
+                db.rollback()
+                flash('Błąd w dodawaniu notatki!', 'error')
+            finally:
+                db.close()
+        
+        return redirect(url_for('newnote'))
+        
     else:
         return render_template("newnote.html")
     
+@app.route('/delete', methods=["POST"])
+@login_required
+def delete():
+    id = request.get_json().get('id')
+
+    try:
+        db = sqlite3.connect(DATABASE)
+        sql = db.cursor()
+        sql.execute('DELETE FROM notes WHERE id=(?) AND owner=(?)', (id, current_user.login))
+        db.commit()
+    except:
+        db.rollback()
+        return 'Nie można usunąć wiadomosci', 500
+    finally:
+        db.close()
+    
+    return "Wiadomosc usunieta pomyslnie", 200
+
 @app.route('/logout', methods=["GET"])
 @login_required
 def logout():
@@ -139,6 +197,8 @@ if __name__ == "__main__":
     sql = db.cursor()
     sql.execute('DROP TABLE IF EXISTS users')
     sql.execute('CREATE TABLE users(id TEXT PRIMARY KEY NOT NULL, login TEXT NOT NULL UNIQUE, password TEXT NOT NULL)')
+    sql.execute('DROP TABLE IF EXISTS notes')
+    sql.execute('CREATE TABLE notes(id TEXT PRIMARY KEY NOT NULL, note TEXT NOT NULL, title TEXT NOT NULL UNIQUE, owner TEXT NOT NULL)')
     db.commit()
 
     app.run(debug=True)

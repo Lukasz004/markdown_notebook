@@ -25,28 +25,46 @@
                     <th>Tytuł</th>
                     <th>Podgląd</th>
                 </tr>
-                <tr>
-                    <td>Miś uszatek</td>
-                    <td>Pozdrawiam ze słonecznej Madery</td>
-                </tr>
+                {% if notes %}
+                    {% for id, note, title in notes %}
+                        <tr onclick="displayMessage(this)" data-title="{{title}}" data-note="{{note}}" data-id="{{id}}">
+                            <td>{{title}}</td>
+                            <td>{{note | truncate(10, killwords=True)}}</td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
             </table>
         </div>
         <div class="right-panel">
             <div id="delete-panel">
-                <button>Usuń wiadomość</button>
+                <button onclick="deleteMessage()">Usuń wiadomość</button>
             </div> 
-            <div>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus vitae aliquet eros, eget molestie turpis. Suspendisse dapibus ex eget aliquam hendrerit. Quisque turpis justo, lacinia dapibus vestibulum vitae, hendrerit vitae arcu. Donec justo augue, elementum ut posuere quis, tincidunt et nibh. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nunc molestie diam imperdiet tincidunt iaculis. Suspendisse purus arcu, pulvinar et porttitor non, porta vitae libero. Fusce augue odio, rutrum vel dolor vel, suscipit ornare sem. Etiam imperdiet tortor sit amet mattis laoreet. In tempor lorem sit amet mauris lacinia laoreet. Maecenas eu blandit nunc. Nulla eget sapien luctus, varius elit maximus, pellentesque mauris. Ut et porta dui.
-
-            In sed luctus odio, et laoreet lorem. Ut vitae eleifend odio, ut vehicula ante. Nulla non elit odio. Cras nec lectus at nibh fermentum lacinia eu maximus diam. Duis sapien lacus, pellentesque sit amet tristique non, iaculis sit amet elit. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Fusce hendrerit fringilla nisl, vel lobortis ex.
-
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam nec scelerisque ipsum. Donec pulvinar leo magna, a dictum massa ultrices malesuada. Vivamus vestibulum gravida odio sit amet interdum. Vivamus vitae lacus in orci pulvinar consequat sed eu tellus. Aliquam porta, mi et auctor sodales, lacus risus laoreet eros, vulputate viverra lacus ipsum vitae nunc. Vivamus eu odio sed nisi vulputate sollicitudin sed porta nisl. Mauris a velit eu ipsum iaculis fermentum. Phasellus pellentesque consequat leo vel efficitur. Donec eu elit vel enim sagittis convallis quis in enim. Integer sed purus leo.
-
-            Nam non facilisis ex. Nulla vitae rhoncus massa. Cras molestie velit sapien, vitae scelerisque leo fringilla eu. Duis et neque justo. Sed iaculis ullamcorper orci, id pharetra quam facilisis ullamcorper. Sed in libero ut metus gravida laoreet. Aliquam vulputate at magna at mattis. Morbi dignissim ex a congue egestas. Sed malesuada quam ut dolor posuere condimentum. Praesent placerat tempor ligula, eu egestas justo molestie non. Nam vitae felis nec erat sagittis fringilla sed vitae metus. Mauris id orci non nibh rutrum sollicitudin. In maximus est ligula, ac vehicula sapien tempus in. Vivamus ultrices orci sem, vitae consectetur nunc scelerisque eget. Aenean et augue dui. Aenean aliquet luctus nisl at eleifend.
-
-            Mauris et tortor vitae justo sagittis accumsan. Aliquam maximus, ex ac sagittis tempor, nisl massa vehicula nisl, non sodales justo ligula porttitor nibh. Vestibulum sed quam sapien. Integer quis varius erat, et sollicitudin lacus. Maecenas dapibus ac massa molestie pellentesque. Ut tincidunt quam at velit varius sollicitudin. Mauris ante est, auctor quis tristique laoreet, ultrices non metus. Donec molestie arcu tempor, eleifend odio id, aliquam lectus. Praesent fermentum augue semper dui ullamcorper, ut egestas libero tempus. Cras vitae dictum nulla, id faucibus lacus. Praesent elit lorem, tempus vel tincidunt sit amet, varius nec lectus.       
+            <div id="display-panel">
+            
             </div>
         </div>
     </div>
 </div>
+<script>
+    let msgID = null;
+
+    function displayMessage(element){
+        preview = document.getElementById("display-panel");
+        note = element.getAttribute('data-note');
+        msgID = element.getAttribute('data-id');
+        preview.innerHTML = note;
+    }
+
+    function deleteMessage(){
+        fetch('/delete', {
+            method: "post",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({id: msgID}),
+        }).then( response =>{
+            location.reload()
+        })
+    }
+</script>
 {% endblock %}

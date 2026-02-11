@@ -72,6 +72,9 @@ textarea{
     align-self: flex-start;
     gap: 0px;
     margin-left: 20px;
+}
+
+.reduce-margin{
     margin-bottom: -15px;
     margin-top: -20px
 }
