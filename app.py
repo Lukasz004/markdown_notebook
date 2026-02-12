@@ -1,7 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
 import sqlite3
+import markdown
+import bleach
+import re
 from uuid import uuid4
+from argon2 import PasswordHasher
 
 app = Flask(__name__)
 app.secret_key = 'fajny_klucz'
@@ -48,8 +52,9 @@ def login():
         if not password:
             flash('Wprowadź hasło!', 'error')
             error = True
-        
+
         if not error:
+            ph = PasswordHasher()
             try:
                 db = sqlite3.connect(DATABASE)
                 sql = db.cursor()
@@ -58,7 +63,7 @@ def login():
                 if row:
                     dbpassword, id = row
                     user = User(login, dbpassword, id)
-                    if user.password == password:
+                    if ph.verify(user.password, password):
                         login_user(user)
                         return redirect(url_for('main'))
                     else:
@@ -91,12 +96,17 @@ def register():
         if password != retypedPassword:
             flash('Hasła się nie zgadzają!', 'error')
             error = True
+        if not error and (not re.fullmatch(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{10,}$', password)):
+            flash('Wprowadzone hasło nie spełnia wymagań. Powinno posiadać małą literę, dużą i cyfrę oraz mieć co najmniej 10 znaków', 'error')
+            error = True
 
+        ph = PasswordHasher()
+        hashedPassword = ph.hash(password)
         if not error:
             try:
                 db = sqlite3.connect(DATABASE)
                 sql = db.cursor()
-                sql.execute('INSERT INTO users(login, password, id) VALUES (?,?,?)', (login, password, str(uuid4())))
+                sql.execute('INSERT INTO users(login, password, id) VALUES (?,?,?)', (login, hashedPassword, str(uuid4())))
                 db.commit()
                 flash('Utworzono konto!', 'success')
                 return redirect(url_for('login'))
@@ -149,6 +159,8 @@ def newnote():
             error = True
 
         if not error:
+            note = sanitizeMarkdown(note)
+            title = sanitizeTitle(title)
             try:
                 db = sqlite3.connect(DATABASE)
                 sql = db.cursor()
@@ -167,6 +179,19 @@ def newnote():
     else:
         return render_template("newnote.html")
     
+def sanitizeMarkdown(text):
+    tags = {'p','h1','h2','h3','h4','h5','h6', 'blackquote', 'ul', 'ol', 'li', 'pre', 'hr', 'em', 'strong', 'code', 'a', 'img', 'br'}
+    attribs = ['href', 'title', 'alt', 'class']
+    md = markdown.markdown(text)
+    clean_md = bleach.clean(md,tags=tags, attributes=attribs)
+    return clean_md
+
+def sanitizeTitle(text):
+    tags = {}
+    attribs = []
+    clean_title = bleach.clean(text, tags=tags, attributes=attribs, strip=True)
+    return clean_title
+
 @app.route('/delete', methods=["POST"])
 @login_required
 def delete():

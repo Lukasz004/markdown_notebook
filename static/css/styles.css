@@ -157,3 +157,8 @@ textarea{
     text-align: right;
     padding-right: 10px;
 }
+
+#display-panel{
+    overflow: scroll;
+    height: 95%;
+}
