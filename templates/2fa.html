@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block body %}
+<div class="main-container">
+    <div class="login-container">
+        {% with messages = get_flashed_messages(with_categories=true)%}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="message message-{{ category }} reduce-margin">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form action="/" method="GET" class="login-form">
+            <img src="data:image/jpeg;base64,{{ qrcode | safe }}" class="qrimage"/>
+            <button type="submit">Przejdź dalej</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -162,3 +162,8 @@ textarea{
     overflow: scroll;
     height: 95%;
 }
+
+.qrimage{
+    width: 200px;
+    height: 200px;
+}

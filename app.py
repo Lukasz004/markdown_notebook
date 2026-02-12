@@ -4,8 +4,16 @@ import sqlite3
 import markdown
 import bleach
 import re
+import time
+import pyotp
+import qrcode
+from base64 import b64encode, b64decode
+from io import BytesIO
 from uuid import uuid4
 from argon2 import PasswordHasher
+from secrets import token_urlsafe
+from Crypto.Cipher import AES
+from Crypto.Hash import SHA256
 
 app = Flask(__name__)
 app.secret_key = 'fajny_klucz'
@@ -44,6 +52,7 @@ def login():
     if request.method == "POST":
         login = request.form['login']
         password = request.form['password']
+        totpcode = request.form['2fa']
         error = False
 
         if not login:
@@ -58,12 +67,14 @@ def login():
             try:
                 db = sqlite3.connect(DATABASE)
                 sql = db.cursor()
-                sql.execute('SELECT password, id FROM users WHERE login=(?)', (login,))
+                sql.execute('SELECT password, id, totpsecret, totpiv FROM users WHERE login=(?)', (login,))
                 row = sql.fetchone()
                 if row:
-                    dbpassword, id = row
+                    dbpassword, id, encryptedSecret, IV = row
+                    totpsecret = decryptSecret(password, encryptedSecret, IV)
+                    totp = pyotp.TOTP(totpsecret)
                     user = User(login, dbpassword, id)
-                    if ph.verify(user.password, password):
+                    if ph.verify(user.password, password) and totp.verify(totpcode):
                         login_user(user)
                         return redirect(url_for('main'))
                     else:
@@ -103,13 +114,15 @@ def register():
         ph = PasswordHasher()
         hashedPassword = ph.hash(password)
         if not error:
+            secret, b64qr = initTOTP(login)
+            encryptedSecret, IV = encryptSecret(password, secret)
             try:
                 db = sqlite3.connect(DATABASE)
                 sql = db.cursor()
-                sql.execute('INSERT INTO users(login, password, id) VALUES (?,?,?)', (login, hashedPassword, str(uuid4())))
+                sql.execute('INSERT INTO users(login, password, id, totpsecret, totpiv) VALUES (?,?,?,?,?)', (login, hashedPassword, str(uuid4()), encryptedSecret, IV))
                 db.commit()
-                flash('Utworzono konto!', 'success')
-                return redirect(url_for('login'))
+                flash('Utworzono konto! Teraz dodaj 2fa', 'success')
+                return render_template('2fa.html', qrcode=b64qr)
             except sqlite3.IntegrityError:
                 flash('Podany login już istnieje!', 'error')
                 db.rollback()
@@ -121,6 +134,35 @@ def register():
     else:
         return render_template('register.html')
     
+def initTOTP(login):
+    secret = pyotp.random_base32()
+    totp = pyotp.totp.TOTP(secret).provisioning_uri(
+        name=login,
+        issuer_name='Najlepsze notatki'
+    )
+    buffer = BytesIO()
+    qrcode.make(totp).save(buffer, format="PNG")
+    b64qr = b64encode(buffer.getvalue()).decode('utf-8')
+    return secret, b64qr
+
+def encryptSecret(password, secret):
+    h = SHA256.new()
+    h.update(password.encode('utf-8'))
+    cipher = AES.new(h.digest(), AES.MODE_CBC)
+    IV = b64encode(cipher.iv).decode('utf-8')
+    cipherSecret = b64encode(cipher.encrypt(secret.encode('utf-8'))).decode('utf-8')
+
+    return cipherSecret, IV
+
+def decryptSecret(password, cipherSecret, IV):
+    h = SHA256.new()
+    h.update(password.encode('utf-8'))
+    cipher = AES.new(h.digest(), AES.MODE_CBC, iv=b64decode(IV))
+    secret = cipher.decrypt(b64decode(cipherSecret)).decode('utf-8')
+
+    return secret
+
+
 @app.route("/main", methods=["POST", "GET"])
 @login_required
 def main():
@@ -221,7 +263,7 @@ if __name__ == "__main__":
     db = sqlite3.connect(DATABASE)
     sql = db.cursor()
     sql.execute('DROP TABLE IF EXISTS users')
-    sql.execute('CREATE TABLE users(id TEXT PRIMARY KEY NOT NULL, login TEXT NOT NULL UNIQUE, password TEXT NOT NULL)')
+    sql.execute('CREATE TABLE users(id TEXT PRIMARY KEY NOT NULL, login TEXT NOT NULL UNIQUE, password TEXT NOT NULL, totpsecret TEXT NOT NULL, totpiv TEXT NOT NULL)')
     sql.execute('DROP TABLE IF EXISTS notes')
     sql.execute('CREATE TABLE notes(id TEXT PRIMARY KEY NOT NULL, note TEXT NOT NULL, title TEXT NOT NULL UNIQUE, owner TEXT NOT NULL)')
     db.commit()
