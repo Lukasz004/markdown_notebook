@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import sqlite3
 import markdown
 import bleach
@@ -21,6 +23,13 @@ app.secret_key = 'fajny_klucz'
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=[],
+    storage_uri="memory://"
+)
 
 DATABASE = './database.db'
 
@@ -48,6 +57,7 @@ def user_loader(userid):
         db.close()
 
 @app.route("/", methods=["GET", "POST"])
+@limiter.limit("5 per minute", methods=["POST"])
 def login():
     if request.method == "POST":
         login = request.form['login']
