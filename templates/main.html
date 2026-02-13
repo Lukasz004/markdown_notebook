@@ -8,7 +8,7 @@
 <div class="main-container">
     <div class="top-panel">
         <div class="user-info">
-            <div>Zalogowano jako:</br>Jacus</div>
+            <div>Zalogowano jako:</br>{{ current_user.login }}</div>
             <form action="/logout" method="GET" style="display: contents;">
                 <button>Wyloguj</button>
             </form>
@@ -29,7 +29,7 @@
                     {% for id, note, title in notes %}
                         <tr onclick="displayMessage(this)" data-title="{{title}}" data-note="{{note}}" data-id="{{id}}">
                             <td>{{title}}</td>
-                            <td>{{note | truncate(10, killwords=True)}}</td>
+                            <td>{{note | truncate(20, killwords=True)}}</td>
                         </tr>
                     {% endfor %}
                 {% endif %}

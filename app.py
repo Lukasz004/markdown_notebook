@@ -9,6 +9,7 @@ import re
 import time
 import pyotp
 import qrcode
+import os
 from base64 import b64encode, b64decode
 from io import BytesIO
 from uuid import uuid4
@@ -18,11 +19,13 @@ from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
 
 app = Flask(__name__)
-app.secret_key = 'fajny_klucz'
+app.secret_key = os.getenv('SECRET_KEY')
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+pepper = os.getenv('PEPPER')
 
 limiter = Limiter(
     get_remote_address,
@@ -31,7 +34,7 @@ limiter = Limiter(
     storage_uri="memory://"
 )
 
-DATABASE = './database.db'
+DATABASE = os.getenv('DATABASE')
 
 class User(UserMixin):
     def __init__(self, login, password, id):
@@ -84,7 +87,7 @@ def login():
                     totpsecret = decryptSecret(password, encryptedSecret, IV)
                     totp = pyotp.TOTP(totpsecret)
                     user = User(login, dbpassword, id)
-                    if ph.verify(user.password, password) and totp.verify(totpcode):
+                    if ph.verify(user.password, password+pepper) and totp.verify(totpcode):
                         login_user(user)
                         return redirect(url_for('main'))
                     else:
@@ -122,7 +125,7 @@ def register():
             error = True
 
         ph = PasswordHasher()
-        hashedPassword = ph.hash(password)
+        hashedPassword = ph.hash(password+pepper)
         if not error:
             secret, b64qr = initTOTP(login)
             encryptedSecret, IV = encryptSecret(password, secret)
@@ -268,7 +271,7 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
     
-if __name__ == "__main__":
+if not os.path.exists(DATABASE):
     print('Initializing database...')
     db = sqlite3.connect(DATABASE)
     sql = db.cursor()
@@ -277,5 +280,3 @@ if __name__ == "__main__":
     sql.execute('DROP TABLE IF EXISTS notes')
     sql.execute('CREATE TABLE notes(id TEXT PRIMARY KEY NOT NULL, note TEXT NOT NULL, title TEXT NOT NULL UNIQUE, owner TEXT NOT NULL)')
     db.commit()
-
-    app.run(debug=True)

@@ -15,7 +15,7 @@
             {% endif %}
         {% endwith %}
         <div class="user-info">
-            <div>Zalogowano jako:</br>Jacus</div>
+            <div>Zalogowano jako:</br>{{ current_user.login }}</div>
             <form action="/logout" method="GET" style="display: contents;">
                 <button>Wyloguj</button>
             </form>
