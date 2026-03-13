@@ -1,4 +1,5 @@
 *.db
 .venv
 .env
+nginx/certs
 __pycache__
