@@ -178,11 +178,8 @@ def encryptSecret(password, secret):
 def decryptSecret(password, cipherSecret, IV):
     h = SHA256.new()
     h.update(password.encode('utf-8'))
-    print('test de1')
     cipher = AES.new(h.digest(), AES.MODE_CBC, iv=b64decode(IV))
-    print('test de2')
     secret = cipher.decrypt(b64decode(cipherSecret)).decode('utf-8')
-    print('test de3')
 
 
     return secret
@@ -237,8 +234,7 @@ def newnote():
                 sql.execute('INSERT INTO notes (id, note, title, owner) VALUES (?,?,?,?)', (str(uuid4()), note, title, current_user.login))
                 db.commit()
                 return redirect(url_for('main'))
-            except Exception as e:
-                print(e)
+            except:
                 db.rollback()
                 flash('Błąd w dodawaniu notatki!', 'error')
             finally:
