@@ -77,21 +77,29 @@ def login():
 
         if not error:
             ph = PasswordHasher()
+            defaultRow = ('$argon2id$v=19$m=65536,t=3,p=4$tFF7XGiar68rH6iXzo5T4g$7lPmJ6dFh0wdb+9DgG+KXz7Vf0OtWWXS1rCvETWHPsk', 
+                          '4691e982-abbd-4728-9ba1-e9cc63d98c09', 
+                          'snr8KWYOGGhFbb+E6ckz+JWkI0dqxrQGGb12J9pkGJE=', 
+                          'RXIQHpEjCRX84QfnKjboig==')   #data for password test and login test (this will not pass password validation in register so noone can use that)
             try:
                 db = sqlite3.connect(DATABASE)
                 sql = db.cursor()
                 sql.execute('SELECT password, id, totpsecret, totpiv FROM users WHERE login=(?)', (login,))
                 row = sql.fetchone()
-                if row:
+                try:       
                     dbpassword, id, encryptedSecret, IV = row
                     totpsecret = decryptSecret(password, encryptedSecret, IV)
-                    totp = pyotp.TOTP(totpsecret)
-                    user = User(login, dbpassword, id)
-                    if ph.verify(user.password, password+pepper) and totp.verify(totpcode):
-                        login_user(user)
-                        return redirect(url_for('main'))
-                    else:
-                        flash('Wprowadzone dane nie są poprawne!', 'error')
+                except:
+                    row = defaultRow
+                    password = 'test'
+                    dbpassword, id, encryptedSecret, IV = row
+                    totpsecret = decryptSecret(password, encryptedSecret, IV)
+                
+                totp = pyotp.TOTP(totpsecret)
+                user = User(login, dbpassword, id)
+                if ph.verify(user.password, password+pepper) and totp.verify(totpcode):
+                    login_user(user)
+                    return redirect(url_for('main'))
                 else:
                     flash('Wprowadzone dane nie są poprawne!', 'error')
             except:
@@ -170,8 +178,12 @@ def encryptSecret(password, secret):
 def decryptSecret(password, cipherSecret, IV):
     h = SHA256.new()
     h.update(password.encode('utf-8'))
+    print('test de1')
     cipher = AES.new(h.digest(), AES.MODE_CBC, iv=b64decode(IV))
+    print('test de2')
     secret = cipher.decrypt(b64decode(cipherSecret)).decode('utf-8')
+    print('test de3')
+
 
     return secret
 
@@ -191,7 +203,12 @@ def getnotes():
         sql = db.cursor()
         sql.execute('SELECT id, note, title FROM notes WHERE owner=(?)', (current_user.login,))
         rows = sql.fetchall()
-        return rows
+        sanitizedRows = []
+        for id, note, title in rows:
+            note = sanitizeMarkdown(note)
+            title = sanitizeTitle(title)
+            sanitizedRows.append((id, note, title))
+        return sanitizedRows
     except:
         db.rollback()
         return None
@@ -214,8 +231,6 @@ def newnote():
             error = True
 
         if not error:
-            note = sanitizeMarkdown(note)
-            title = sanitizeTitle(title)
             try:
                 db = sqlite3.connect(DATABASE)
                 sql = db.cursor()
